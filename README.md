@@ -1,16 +1,18 @@
-# Vault 的一个最佳实践
-在之前的文章「防拖库的最佳实践」中，我提到了使用 Vault 來存储秘钥的方案。本文是我在开发中使用的最佳实践。
+# vault+k8s 最佳实践
+
+在之前的文章「[防拖库的最佳实践](https://www.sagittarius.ai/blog/2018/9/3/hashicorp-vault)」中，我提到了使用 Vault 來存储秘钥的方案。本文是我在开发中使用的最佳实践。
 
 ## 准备工作
 
 首先生成一套部署 Vault 所需要的证书。在这里我使用了 `cfssl` 这个工具，在 Mac 下可以使用 `brew install cfssl` 来安装。
 
-1. 创建一个 `ca-csr.json` 配置文件，例如 [ca/ca-csr.json](ca/ca-csr.json)。
+1. 创建一个 `ca-csr.json` 配置文件，如 [ca/ca-csr.json](ca/ca-csr.json)。之后运行命令。
 
-  之后运行命令 `cfssl gencert -initca ../ca/ca-csr.json | cfssljson -bare ca`
-生成 `ca.pem` 和 `ca-key.pem`。
+  `cfssl gencert -initca ../ca/ca-csr.json | cfssljson -bare ca`
 
-- 再创建一个 `ca-config.json` 配置文件，例如 [ca/ca-config.json](ca/ca-config.json)。 和 `vault-csr.json` 配置文件，例如 [ca/vault-csr.json](ca/vault-csr.json) 之后运行命令：
+  生成 `ca.pem` 和 `ca-key.pem`。
+
+- 再创建一个 `ca-config.json` 配置文件，如 [ca/ca-config.json](ca/ca-config.json)，和 `vault-csr.json` 配置文件，如 [ca/vault-csr.json](ca/vault-csr.json)。之后运行命令：
   ```
   cfssl gencert \
   -ca=ca.pem \
@@ -29,6 +31,7 @@
 假设我们已经有一套 k8s 在线，而且可以使用 `kubectl` 命令控制。
 
 1. 先将 ca 证书， vault 的证书和秘钥写入 k8s 的 secret 中。
+
   ```
   kubectl create secret generic vault-tls \
   --from-file=ca.pem \
