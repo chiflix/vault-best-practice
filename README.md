@@ -12,7 +12,7 @@
 
   生成 `ca.pem` 和 `ca-key.pem`。
 
-- 再创建一个 `ca-config.json` 配置文件，如 [ca/ca-config.json](ca/ca-config.json)，和 `vault-csr.json` 配置文件，如 [ca/vault-csr.json](ca/vault-csr.json)。之后运行命令：
+2. 再创建一个 `ca-config.json` 配置文件，如 [ca/ca-config.json](ca/ca-config.json)，和 `vault-csr.json` 配置文件，如 [ca/vault-csr.json](ca/vault-csr.json)。之后运行命令：
   ```
   cfssl gencert \
   -ca=ca.pem \
@@ -22,7 +22,7 @@
   -profile=default \
   ./vault-csr.json | cfssljson -bare vault
   ```
-- 生成 `vault.pem` 后再运行 `cat vault.pem ca.pem > vault-combined.pem` 将 vault 的证书和 ca 证书合并。
+3. 生成 `vault.pem` 后再运行 `cat vault.pem ca.pem > vault-combined.pem` 将 vault 的证书和 ca 证书合并。
 
 这时我们应该有一组 `ca-key.pem` 和 `vault-combined.pem`。
 
@@ -39,19 +39,19 @@
   --from-file=vault-key.pem
   ```
 
-- 创建 vault 配置文件 `vault.hcl`。如果是开发环境，不需要高可用（HA)，我会推荐使用 mysql 作为存储服务配置，例如 [vault-mysql.hcl](vault-mysql.hcl)。 如果是线上环境，我推荐使用支持 高可用（HA) 的存储层，例如 Google Cloud Storage [vault-gcs.hcl](vault-gcs.hcl)。
+2. 创建 vault 配置文件 `vault.hcl`。如果是开发环境，不需要高可用（HA)，我会推荐使用 mysql 作为存储服务配置，例如 [vault-mysql.hcl](vault-mysql.hcl)。 如果是线上环境，我推荐使用支持 高可用（HA) 的存储层，例如 Google Cloud Storage [vault-gcs.hcl](vault-gcs.hcl)。
 
   - 可以在 `gcloud` 的 `console` 中使用 `gsutil mb gs://vault_storage_bucket_name` 命令创建 gcs 的 bucket。
 
-- 将 vault 的配置文件 `vault.hcl` 写入 k8s 的 configmap。
+3. 将 vault 的配置文件 `vault.hcl` 写入 k8s 的 configmap。
   ```
   kubectl create secret generic vault-config \
   --from-file=vault.hcl
   ```
 
-- 创建一个 k8s 服务配置文件 `vault.yml` ，例如开发测试环境配置 [vault-stage.yml](vault-stage.yml)，或者生产环境 [vault-prod.yml](vault-prod.yml)
+4. 创建一个 k8s 服务配置文件 `vault.yml` ，例如开发测试环境配置 [vault-stage.yml](vault-stage.yml)，或者生产环境 [vault-prod.yml](vault-prod.yml)
 
-- 将域名配置写入 configmap。
+5. 将域名配置写入 configmap。
 
   ```
   kubectl create configmap vault \
@@ -59,14 +59,14 @@
   api-addr=https://vault.of.your.custom.domain.name.com:8200
   ```
 
-- 如果使用了 gcs ，将谷歌的 `service-account-cert.json`，例如 `vault-service-account-cert-example.json` （这个文件是 gcp 平台上生成的）。写入 secret 。
+6. 如果使用了 gcs ，将谷歌的 `service-account-cert.json`，例如 `vault-service-account-cert-example.json` （这个文件是 gcp 平台上生成的）。写入 secret 。
 
   ```
   kubectl create secret generic vault-gcs \
     --from-file=service-account-cert.json
   ```
 
-- 启动 vault 服务
+7. 启动 vault 服务
 
   `kubectl apply -f vault.yaml`
 
@@ -78,13 +78,13 @@ vault 在初始化之前是不能正常服务，而且面向 k8s 的健康检查
 
   `kubectl exec -it `*`vault-0`*` -- /bin/sh`
 
-- 初始化 vault。
+2. 初始化 vault。
 
   `vault operator init -ca-cert=/etc/vault/tls/ca.pem`
 
   初始化 vault 的操作只有第一次创建部署 vault 时。会生成5个 root tokens。一定要保存好。初始化成功之后，就不需要也不会再运行 init 的操作。
 
-- unseal vault。这个操作使用初始化时生成的 root tokens 中的任意3个，在每次 vault 集群启动后都要运行。
+3. unseal vault。这个操作使用初始化时生成的 root tokens 中的任意3个，在每次 vault 集群启动后都要运行。
 
   `vault operator unseal -ca-cert=/etc/vault/tls/ca.pem`
 
@@ -102,14 +102,14 @@ vault 在初始化之前是不能正常服务，而且面向 k8s 的健康检查
   export VAULT_TOKEN=your-vault-token
   ```
 
-- 创建一个 policy 配置，例如 [vault-policy-example.hcl](vault-policy-example.hcl)。并通过 vault 命令行创建这个 policy。
+2. 创建一个 policy 配置，例如 [vault-policy-example.hcl](vault-policy-example.hcl)。并通过 vault 命令行创建这个 policy。
 
   ```
   export VAULT_ADDR=https://vault.of.your.custom.domain.name.com:8200 export VAULT_CACERT=./ca.pem
   export VAULT_TOKEN=your-vault-token
   ```
 
-- 在 secret/example 下写入一个键值。例如写入一个文件或 key。
+3. 在 secret/example 下写入一个键值。例如写入一个文件或 key。
 
   ```
   vault kv put secret/example/foobar \
@@ -117,15 +117,15 @@ vault 在初始化之前是不能正常服务，而且面向 k8s 的健康检查
   gcloud_apikey="your-gcloud-api-key"
   ```
 
-- 创建一个 policy 配置，例如一个 secret/example/* 下的只读策略， [vault-policy-example-readonly.hcl](vault-policy-example-readonly.hcl)。并通过 vault 命令行创建这个 policy。
+4. 创建一个 policy 配置，例如一个 secret/example/* 下的只读策略， [vault-policy-example-readonly.hcl](vault-policy-example-readonly.hcl)。并通过 vault 命令行创建这个 policy。
 
   `policy write example-readonly vault-policy-example-readonly.hcl`
 
-- 为这个 policy 创建一个 token。这个 token 仅有读取这个 policy 下的键值权限。因此更适合应用中使用。
+5. 为这个 policy 创建一个 token。这个 token 仅有读取这个 policy 下的键值权限。因此更适合应用中使用。
 
   `vault token create -policy=example-readonly`
 
-- 之后我们就可以在代码中通过这个 readonly 的 token 来读路径下的键值。假设我们使用 golang。
+6. 之后我们就可以在代码中通过这个 readonly 的 token 来读路径下的键值。假设我们使用 golang。
 
   ```go
   ...
@@ -166,6 +166,14 @@ vault 在初始化之前是不能正常服务，而且面向 k8s 的健康检查
   fmt.Println(secretValues.Data["grpc_tls_cert"].(string))
   ```
 
+## 维护
+
+维护上要注意的是， token 和 证书都是有过期时间。到期前要 renew 和重新配置新证书。可以通过命令行 renew：
+
+  `vault token renew your-vault-token`
+
+如果 token 所属的 policy 有 /auth/token/renew-self 相应的权限。那么也可以亦可以代码中自己 renew 自己。那么就能保证活跃的 token 一直有效。而不活跃的 token ，即使被忘记了，一段时间后也会失效。
+
 ---
 
-这就是我在 k8s 集群上使用 vault 的方式了。
+这些就是我在 k8s 集群上使用 vault 的方式了。
