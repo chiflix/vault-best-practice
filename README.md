@@ -1,18 +1,16 @@
-# vault+k8s 最佳实践
-
 在之前的文章「[防拖库的最佳实践](https://www.sagittarius.ai/blog/2018/9/3/hashicorp-vault)」中，我提到了使用 Vault 來存储秘钥的方案。本文是我在开发中使用的最佳实践。
 
 ## 准备工作
 
 首先生成一套部署 Vault 所需要的证书。在这里我使用了 `cfssl` 这个工具，在 Mac 下可以使用 `brew install cfssl` 来安装。
 
-1. 创建一个 `ca-csr.json` 配置文件，如 [ca/ca-csr.json](ca/ca-csr.json)。之后运行命令。
+1. 创建一个 `ca-csr.json` 配置文件，如 [ca/ca-csr.json](https://github.com/chiflix/vault-best-practice/blob/master/ca/ca-csr.json)。之后运行命令。
 
   `cfssl gencert -initca ./ca/ca-csr.json | cfssljson -bare ca`
 
   生成 `ca.pem` 和 `ca-key.pem`。
 
-2. 再创建一个 `ca-config.json` 配置文件，如 [ca/ca-config.json](ca/ca-config.json)，和 `vault-csr.json` 配置文件，如 [ca/vault-csr.json](ca/vault-csr.json)。之后运行命令：
+2. 再创建一个 `ca-config.json` 配置文件，如 [ca/ca-config.json](https://github.com/chiflix/vault-best-practice/blob/master/ca/ca-config.json)，和 `vault-csr.json` 配置文件，如 [ca/vault-csr.json](https://github.com/chiflix/vault-best-practice/blob/master/ca/vault-csr.json)。之后运行命令：
   ```
   cfssl gencert \
   -ca=ca.pem \
@@ -39,7 +37,7 @@
   --from-file=vault-key.pem
   ```
 
-2. 创建 vault 配置文件 `vault.hcl`。如果是开发环境，不需要高可用（HA)，我会推荐使用 mysql 作为存储服务配置，例如 [vault-mysql.hcl](vault-mysql.hcl)。 如果是线上环境，我推荐使用支持 高可用（HA) 的存储层，例如 Google Cloud Storage [vault-gcs.hcl](vault-gcs.hcl)。
+2. 创建 vault 配置文件 `vault.hcl`。如果是开发环境，不需要高可用（HA)，我会推荐使用 mysql 作为存储服务配置，例如 [vault-mysql.hcl](https://github.com/chiflix/vault-best-practice/blob/master/vault-mysql.hcl)。 如果是线上环境，我推荐使用支持 高可用（HA) 的存储层，例如 Google Cloud Storage [vault-gcs.hcl](https://github.com/chiflix/vault-best-practice/blob/master/vault-gcs.hcl)。
 
   - 可以在 `gcloud` 的 `console` 中使用 `gsutil mb gs://vault_storage_bucket_name` 命令创建 gcs 的 bucket。
 
@@ -49,7 +47,7 @@
   --from-file=vault.hcl
   ```
 
-4. 创建一个 k8s 服务配置文件 `vault.yml` ，例如开发测试环境配置 [vault-stage.yml](vault-stage.yml)，或者生产环境 [vault-prod.yml](vault-prod.yml)
+4. 创建一个 k8s 服务配置文件 `vault.yml` ，例如开发测试环境配置 [vault-stage.yml](https://github.com/chiflix/vault-best-practice/blob/master/vault-stage.yml)，或者生产环境 [vault-prod.yml](https://github.com/chiflix/vault-best-practice/blob/master/vault-prod.yml)
 
 5. 将域名配置写入 configmap。
 
@@ -102,7 +100,7 @@ vault 在初始化之前是不能正常服务，而且面向 k8s 的健康检查
   export VAULT_TOKEN=your-vault-token
   ```
 
-2. 创建一个 policy 配置，例如 [vault-policy-example.hcl](vault-policy-example.hcl)。并通过 vault 命令行创建这个 policy。
+2. 创建一个 policy 配置，例如 [vault-policy-example.hcl](https://github.com/chiflix/vault-best-practice/blob/master/vault-policy-example.hcl)。并通过 vault 命令行创建这个 policy。
 
   ```
   export VAULT_ADDR=https://vault.of.your.custom.domain.name.com:8200 export VAULT_CACERT=./ca.pem
@@ -117,7 +115,7 @@ vault 在初始化之前是不能正常服务，而且面向 k8s 的健康检查
   gcloud_apikey="your-gcloud-api-key"
   ```
 
-4. 创建一个 policy 配置，例如一个 secret/example/* 下的只读策略， [vault-policy-example-readonly.hcl](vault-policy-example-readonly.hcl)。并通过 vault 命令行创建这个 policy。
+4. 创建一个 policy 配置，例如一个 secret/example/* 下的只读策略， [vault-policy-example-readonly.hcl](https://github.com/chiflix/vault-best-practice/blob/master/vault-policy-example-readonly.hcl)。并通过 vault 命令行创建这个 policy。
 
   `policy write example-readonly vault-policy-example-readonly.hcl`
 
