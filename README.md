@@ -8,7 +8,7 @@
 
 1. 创建一个 `ca-csr.json` 配置文件，如 [ca/ca-csr.json](ca/ca-csr.json)。之后运行命令。
 
-  `cfssl gencert -initca ../ca/ca-csr.json | cfssljson -bare ca`
+  `cfssl gencert -initca ./ca/ca-csr.json | cfssljson -bare ca`
 
   生成 `ca.pem` 和 `ca-key.pem`。
 
